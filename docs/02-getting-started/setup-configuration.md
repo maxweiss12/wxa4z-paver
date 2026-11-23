@@ -6,11 +6,9 @@ nav_order: 3
 
 # Setup & Configuration
 
-## Logging into the UI (test)
+## Logging into the UI
 
 1. Navigate to the environment UI and authenticate using the `w3-login` option:
-   
-   **Demo URL:** [https://52.118.249.172:6443](https://52.118.249.172:6443)
 
      <img src="image-2.png" alt="alt text" width="70%">
     
