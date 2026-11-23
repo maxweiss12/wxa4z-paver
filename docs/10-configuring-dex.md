@@ -10,11 +10,6 @@ To configure local authentication to the wxa4z V4 UI using dex, the following co
 - `wxa4z-nginx`
 - `wxa4z-platform-ui`
 
-When deploying the `wxa4z-platform-ui` container, ensure that the following settings/environment variables are set, where `<public-IP>` is the IP address of your VM hosting the paver server:
-
-- `PAVER_PROXY_ENABLED=true`
-- `PAVER_SERVER=http://<public-IP>:8988`
-
 Once done, the remaining steps assume that the paver appliance has already been installed. 
 
 ## Install Dex:
@@ -27,98 +22,152 @@ As the `root` user (i.e. `sudo su`), create the `dex` folder with the required f
 4. `cd dex`
 5. Create the `config.yaml` file in the `dex` folder and copy and past the following contents, replacing `<public IP>` in the first line with your VM's public IP:
 
-    ```
-    issuer: http://<public IP>:5556/dex
+```
+# Dex OIDC provider — VM deployment configuration
+#
+# Standalone config using staticPasswords — no upstream IDP required.
+# Uses the built-in password DB with groups per user.
+#
+# Setup:
+#   1. Set VM_HOST below to your VM's hostname or IP address.
+#   2. Ensure port 5556 is open in the VM firewall.
+#   3. Run:  docker compose up -d
+#
+# Default password for ALL users (change before going to production):
+#   <PASSWORD>
+#
+# To regenerate a bcrypt hash:
+#   htpasswd -bnBC 10 "" <new-password> | tr -d ':\n'
+#
+# Get a token (ROPC flow):
+#   TOKEN=$(curl -s -X POST http://<VM_HOST>:5556/dex/token \
+#     -u "connection-manager-client:<CLIENT_SECRET>" \
+#     -d "grant_type=password&username=admin@local&password=<PASSWORD>&scope=openid+profile+email+groups" \
+#     | jq -r .id_token)
+#
+# admin@local token will contain: "groups": ["admins"]  → IsAdmin() returns true
+# user1-5 tokens will contain:    "groups": ["users"]   → IsAdmin() returns false
+#
+# Decode the payload:
+#   TOKEN_PAYLOAD=$(echo $TOKEN | cut -d. -f2)
+#   python3 -c "
+#   import base64, json, sys
+#   p = sys.argv[1]
+#   p += '=' * (4 - len(p) % 4)
+#   print(json.dumps(json.loads(base64.urlsafe_b64decode(p)), indent=2))
+#   " "$TOKEN_PAYLOAD"
 
-    storage:
-    type: memory
+# ── CHANGE THIS ──────────────────────────────────────────────────────────────
+# Replace <VM_HOST> with the actual hostname or IP of the VM (or localhost for local testing), e.g.:
+#   issuer: http://localhost:5556/dex
+#   issuer: http://192.168.1.42:5556/dex
+# Must match IDP_VERIFY (without /.well-known/openid-configuration) in
+# connection-manager's .env.
+# ─────────────────────────────────────────────────────────────────────────────
+issuer: http://<Public-IP>:5556/dex
 
-    web:
-    http: 0.0.0.0:5556
+storage:
+  type: memory
 
-    logger:
-    level: info
-    format: text
+web:
+  http: 0.0.0.0:5556
 
-    oauth2:
-    skipApprovalScreen: true
-    passwordConnector: local
-    alwaysShowIdTokenClaims: true
+logger:
+  level: info
+  format: text
+
+oauth2:
+  skipApprovalScreen: true
+  passwordConnector: local
+  alwaysShowIdTokenClaims: true
+  grantTypes:
+    - authorization_code
+    - refresh_token
+    - password
+
+enablePasswordDB: true
+
+# ── USERS ────────────────────────────────────────────────────────────────────
+# 1 admin + 5 normal users.
+# All users share the same password: <PASSWORD> — change before production.
+# Re-hash:  htpasswd -bnBC 10 "" <new-password> | tr -d ':\n'
+# ─────────────────────────────────────────────────────────────────────────────
+staticPasswords:
+
+  # Admin user — intended for write operations
+  - email: admin@local
+    hash: "$2b$10$pUrUPUAlpMwnpouMvhnYj.GAFIfII6e9UDVa/T.aTXQy3rzPDppW."
+    username: admin
+    userID: "61f0a820-4ecf-4191-9707-2baabf5cd22b"
+    groups:
+      - admins
+
+  # Normal users — read-only / standard access
+  - email: user1@local
+    hash: "$2b$10$pUrUPUAlpMwnpouMvhnYj.GAFIfII6e9UDVa/T.aTXQy3rzPDppW."
+    username: user1
+    userID: "c505011c-b69e-4411-a640-3c7460fc5cdd"
+    groups:
+      - users
+
+staticClients:
+  - id: connection-manager-client
+    secret: "dev-secret"
+    name: Connection Manager
+    redirectURIs:
+      - http://localhost:3000/callback
+      - http://localhost:43123/auth/callback
+      - http://<Public IP>:3000/callback
+      - http://<Public IP>:43123/auth/callback
+      - https://<Public IP>:6443/auth/callback
     grantTypes:
-        - authorization_code
-        - refresh_token
-        - password
+      - authorization_code
+      - refresh_token
+      - password
+    responseTypes:
+      - code
+      - token
+      - id_token
+    scopes:
+      - openid
+      - profile
+      - email
+      - groups
 
-    enablePasswordDB: true
+expiry:
+  idTokens: 24h
+  refreshTokens:
+    validIfNotUsedFor: 24h
+```
 
-    # Two static users.
-    # admin@local — groups: [admins] — intended to be recognised as admin
-    # user@local  — groups: []      — regular user
-    #
-    # Password for both accounts: "password"
-    # Hash generated with bcrypt cost=10.
-    staticPasswords:
-    - email: admin@local
-        hash: "$2y$10$oeKTurlmYP.50zl/Ez.y7e/B9vm0b4R2RKEZRnBwn3OUHoPMUQBbm"
-        username: admin
-        userID: "admin-001"
-        groups:
-        - admins
-
-    - email: user@local
-        hash: "$2y$10$oeKTurlmYP.50zl/Ez.y7e/B9vm0b4R2RKEZRnBwn3OUHoPMUQBbm"
-        username: user
-        userID: "user-001"
-        groups: []
-
-    staticClients:
-    - id: connection-manager-dev
-        secret: dev-secret
-        name: Connection Manager (local dev)
-        redirectURIs:
-        - http://127.0.0.1:8080/callback
-        grantTypes:
-        - authorization_code
-        - refresh_token
-        - password
-        responseTypes:
-        - code
-        - token
-        - id_token
-        
-
-    expiry:
-    idTokens: 24h
-    refreshTokens:
-        validIfNotUsedFor: 24h
-    ```
 
 
 6. Once saved, create the `docker-compose.yml` file also in the `dex` folder and copy and past the following contents:
 
-    ```
-    # Dex OIDC provider — standalone container (local development)
-    #
-    # Usage:
-    #   docker compose up
+```
+# Dex OIDC provider — standalone container (local development)
+#
+# Usage:
+#   docker compose up
 
-    services:
+services:
 
-    dex:
-        image: ghcr.io/dexidp/dex:v2.42.0
-        command: ["dex", "serve", "/etc/dex/config.yaml"]
-        ports:
-        - "5556:5556"
-        volumes:
-        - ./config.yaml:/etc/dex/config.yaml:ro
-        healthcheck:
-        test: ["CMD", "wget", "-qO-", "http://localhost:5556/dex/.well-known/openid-configuration"]
-        interval: 5s
-        timeout: 3s
-        retries: 10
-        start_period: 5s
-        restart: unless-stopped
-    ```
+  dex:
+    image: ghcr.io/dexidp/dex:v2.46.1
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
+    ports:
+      - "5556:5556"
+    volumes:
+      - ./config.yaml:/etc/dex/config.yaml:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5556/dex/.well-known/openid-configuration"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+```
 
 
 7. Once both files are saved, run these 2 commands from the `dex` directory:
@@ -135,7 +184,7 @@ As the `root` user (i.e. `sudo su`), create the `dex` folder with the required f
    
   - Provider ID: `dex-local`
   - Provider Name: `dex-local`
-  - Client ID: `connection-manager-dev`
+  - Client ID: `connection-manager-client`
   - Client Secret: `dev-secret`
   - Identity Provider Endpoint: `http://<Public IP>:5556/dex/.well-known/openid-configuration`
   - Redirect URI: leave default
@@ -147,52 +196,10 @@ Then log out of the UI.
 ## Validate dex auth
 
 Log back in as the default dex user:
-   - username: `user@local`
+   - username: `user1@local`
    - password: `password`
 
 You should confirm that the dex user can log in. In the Chat, you may see that the paver shell doesn't load. Two changes need to be done to enable connectivity to the paver server
-
-## Expose the `paver-nginx` container port externally
-
-By default, the `paver-nginx` service binds to `127.0.0.1:8988`. To make the service externally available, we can bind to `0.0.0.0:8988`.
-
-1. Change active user to `paver` using `su paver`
-2. `cd` to get to paver home directory
-3. Run `cat /home/paver/.config/containers/systemd/paver-nginx.container`
-   
-   You should see the following line:
-   ```
-   PublishPort=127.0.0.1:8988:80
-   ```
-4. Modify this line with `vi /home/paver/.config/containers/systemd/paver-nginx.container` to set to `PublishPort=0.0.0.0:8988:80`
-
-5. Then save the file.
-
-6. Persist the changes to the running container by running the below commands:
-   
-    ```
-    export XDG_RUNTIME_DIR=/run/user/$(id -u)
-    ```
-
-    ```
-    systemctl --user daemon-reload
-    ```
-
-    ```
-    systemctl --user restart paver-nginx.service
-    ```
-
-    When the `paver-nginx` container comes back up, it should use the new port config. Verify by running:
-
-    `podman ps -a`
-
-    You should then see:
-
-    ```
-    0.0.0.0:8988->80/tcp
-    ```
-
-7. Lastly, issue `exit` to go back to the `root` user.
 
 ## Configure the `paveradm oidc` settings
 
@@ -201,7 +208,7 @@ Lastly, you'll need to configure the `paveradm oidc` settings to authenticate th
 Run the following command as `root` to configure OIDC, replacing `<public IP>` with the public IP address of your VM:
 
 ```
-paveradm config oidc --issuer http://<public IP>:5556/dex --client-id connection-manager-dev --redirect-uris http://127.0.0.1:43123/auth/callback --use-allowlist false
+paveradm config oidc --issuer http://<public IP>:5556/dex --client-id connection-manager-client --redirect-uris http://127.0.0.1:43123/auth/callback --use-allowlist false
 ```
 
 After the command is issued and the paver server restarts, confirm that OIDC was properly configured by running: `paveradm config oidc -s`
