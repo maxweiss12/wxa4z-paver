@@ -1,0 +1,7 @@
+title: watsonx Assistant for Z - Private Preview Demo Guide
+description: One-line description of the project
+remote_theme: just-the-docs/just-the-docs
+color_scheme: custom
+
+plugins:
+  - jekyll-remote-theme

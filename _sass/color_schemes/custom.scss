@@ -1,0 +1,26 @@
+// _sass/color_schemes/custom.scss
+
+// --- Layout -----------------------------------------------------
+$nav-width: 280px;
+$content-width: 800px;
+$header-height: 60px;
+
+// --- Typography -------------------------------------------------
+$body-font-size: 16px;
+$body-line-height: 1.6;
+
+// --- Color palette ----------------------------------------------
+$body-background-color: #ffffff;
+$body-text-color: #27282b;
+$body-heading-color: #1a1a1a;
+$link-color: #2c6ecb;
+$nav-child-link-color: #5c5c5c;
+
+$sidebar-color: #f7f7f8;
+$border-color: #e5e5e6;
+
+$btn-primary-color: #2c6ecb;
+$base-button-color: #f7f7f8;
+
+$code-background-color: #f4f4f5;
+$feedback-color: darken($sidebar-color, 3%);

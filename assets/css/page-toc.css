@@ -1,0 +1,60 @@
+/* Hidden unless the JavaScript successfully creates the TOC */
+.page-toc {
+  display: none;
+}
+
+body.has-page-toc .page-toc {
+  display: block !important;
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  left: auto;
+  width: 220px;
+  max-height: calc(100vh - 130px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 16px;
+  background: #fff;
+  border: 2px solid #000;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+  z-index: 9999;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+body.has-page-toc .page-toc h2 {
+  margin-top: 0;
+  font-size: 15px;
+}
+
+body.has-page-toc .page-toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+body.has-page-toc .page-toc li {
+  margin: 8px 0;
+}
+
+body.has-page-toc .page-toc .page-toc-subheading {
+  padding-left: 12px;
+}
+
+body.has-page-toc .page-toc a {
+  color: #000;
+  text-decoration: none;
+}
+
+body.has-page-toc .page-toc a:hover {
+  text-decoration: underline;
+}
+
+/* Leave room for the TOC on wide screens */
+@media (min-width: 1400px) {
+  body.has-page-toc .main-content {
+    padding-right: 250px;
+    box-sizing: border-box;
+  }
+}

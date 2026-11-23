@@ -1,0 +1,169 @@
+// _sass/custom/custom.scss
+
+// ---------------------------------------------------------------
+// Sidebar
+// ---------------------------------------------------------------
+
+.side-bar {
+  border-right: 1px solid #e5e5e6;
+  background-color: #f7f7f8;
+  box-shadow: none;
+
+  @include mq(md) {
+    width: 280px;
+    min-width: 280px;
+  }
+
+  @include mq(lg) {
+    // Remove Just the Docs' large-screen calculation that
+    // creates the large empty area to the left of the sidebar.
+    width: 280px;
+    min-width: 280px;
+  }
+}
+
+// ---------------------------------------------------------------
+// Site title
+// ---------------------------------------------------------------
+
+.site-header {
+  width: 280px;
+  max-width: 280px;
+
+  // Override Just the Docs' fixed header height
+  height: auto;
+  max-height: none;
+  min-height: 0;
+
+  border-bottom: none;
+  padding: 1.25rem 1.25rem 1.5rem;
+  box-sizing: border-box;
+
+  // Don't let the flex layout collapse the header
+  flex: 0 0 auto;
+}
+
+.site-title {
+  display: block;
+  width: 100%;
+  height: auto;
+
+  font-size: 1.25rem;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+
+.site-nav {
+  width: 280px;
+  max-width: 280px;
+  margin-top: 0;
+}
+
+
+
+
+// ---------------------------------------------------------------
+// Navigation
+// ---------------------------------------------------------------
+
+
+.nav-list .nav-list-item {
+  margin: 0;
+
+  .nav-list-link {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: #5c5c5c;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.04);
+    }
+  }
+}
+
+.nav-list .nav-list-item .nav-list-link.active {
+  font-weight: 600;
+  color: #2c6ecb;
+  background-color: transparent;
+  border-left: 3px solid #2c6ecb;
+  padding-left: calc(1rem - 3px);
+}
+
+// ---------------------------------------------------------------
+// Search
+// ---------------------------------------------------------------
+
+.search-input {
+  border: 1px solid #e5e5e6;
+  box-shadow: none;
+}
+
+.article-intro {
+  max-width: 760px;
+  margin: 0 auto 3rem;
+
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.1rem;
+  line-height: 1.75;
+  color: #292929;
+
+  h1,
+  h2,
+  h3 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #111;
+  }
+
+  h1 {
+    font-size: 2.7rem;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: #666;
+    margin-top: 0;
+  }
+
+  p {
+    margin-bottom: 1.25rem;
+  }
+}
+
+// ---------------------------------------------------------------
+// Main content: start right next to the sidebar
+// ---------------------------------------------------------------
+
+.main {
+  @include mq(md) {
+    margin-left: $nav-width;
+  }
+
+  @include mq(lg) {
+    // Override the centered calc() so content hugs the sidebar
+    margin-left: $nav-width;
+  }
+}
+
+.main-content-wrap {
+  @include mq(md) {
+    padding-left: 1rem;   // gap between sidebar and text; adjust to taste
+  }
+}
+// ---------------------------------------------------------------
+// Images
+// ---------------------------------------------------------------
+
+.main-content img {
+  border: 2px solid #000;
+}
